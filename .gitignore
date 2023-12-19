@@ -1,0 +1,10 @@
+# Ignore GLAD, GLFW, and other extra libraries.
+bin/
+build/
+include/
+lib/
+src/glad.c
+
+# Ignore extra files
+*.dSYM
+*.txt
