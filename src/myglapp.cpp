@@ -11,6 +11,7 @@
 #include "glad/glad.h"
 #include "glfw/glfw3.h"
 
+#include <cmath>
 #include <iostream>
 
 #include "utils/resources.hpp"
@@ -122,6 +123,10 @@ int main()
     // Begin window use and rendering
     glViewport(0, 0, window_width, window_height);
 
+    // Dynamic uniform state:
+    std::string yDeltaName {"yDelta"};
+    float yDelta = 0.0f;
+
     while (!glfwWindowShouldClose(window))
     {
         // process events
@@ -131,14 +136,20 @@ int main()
         glClearColor(0.9375f, 0.9375f, 0.9375f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // render lilac triangle
+        // render bobbing lilac box
         program.use();
+
+        program.setUniformFloat(yDeltaName, yDelta);
+
         glBindVertexArray(vao_id);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
         // show new frame buffer
         glfwSwapBuffers(window);
+
+        // update uniform state
+        yDelta = std::sinf(glfwGetTime()) / 2.0f;
 
         // lookup events
         glfwPollEvents();
