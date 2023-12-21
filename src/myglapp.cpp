@@ -2,6 +2,7 @@
  * @file myglapp.cpp
  * @author Derek Tan
  * @brief Implements application setup code.
+ * @todo Add FPS based render loop.
  * @version 0.1
  * @date 2023-12-18
  */
@@ -16,12 +17,12 @@
 
 /* Main Constants */
 
-static constexpr const char* basic_vert_shader_path = "./resources/basicvertex.glsl";
-static constexpr const char* basic_frag_shader_path = "./resources/basicfragment.glsl";
+constexpr const char* basic_vert_shader_path = "./resources/basicvertex.glsl";
+constexpr const char* basic_frag_shader_path = "./resources/basicfragment.glsl";
 
-static constexpr const int32_t window_width = 480;
-static constexpr const int32_t window_height = 480;
-static constexpr const char* window_title = "GL Demo 2";
+constexpr const int32_t window_width = 480;
+constexpr const int32_t window_height = 480;
+constexpr const char* window_title = "GL Demo 2";
 
 /* Callbacks */
 

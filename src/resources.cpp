@@ -25,24 +25,11 @@ resources::GLShader::GLShader(uint32_t type, const char* file_path)
 {
     id = glCreateShader(type);
     
-    files::FileReader reader {};
-    char* source_buffer = nullptr;
-
-    if (!reader.useFile(file_path))
-    {
-        source = source_buffer;
-        load_ok = false;
-        return;
-    }
-
-    if (!reader.loadFileTo(file_path, source_buffer))
-    {
-        load_ok = false;
-        return;
-    }
+    std::ifstream fs {};
+    char* source_buffer = files::loadFilebyPath(fs, file_path);
 
     source = source_buffer;
-    load_ok = true;
+    load_ok = source != nullptr;
 }
 
 resources::GLShader::~GLShader()
@@ -122,6 +109,8 @@ resources::GLShaderProgram::GLShaderProgram(const char* vshader_path, const char
         glGetProgramInfoLog(id, log_buffer_size, NULL, log_buffer);
         std::cerr << "Error [Program Linking]:\n" << log_buffer << '\n';
     }
+
+    setup_ok = true;
 }
 
 [[nodiscard]] bool resources::GLShaderProgram::getSetupFlag() const
