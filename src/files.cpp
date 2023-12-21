@@ -10,38 +10,29 @@
 
 #include "utils/files.hpp"
 
-files::FileReader::FileReader()
-: reader {}
-{}
-
-[[nodiscard]] bool files::FileReader::useFile(const char* file_path)
+[[nodiscard]] char* files::loadFilebyPath(std::ifstream& reader, const char* file_path)
 {
-    reader.open(file_path, std::ios_base::in | std::ios_base::ate);
+    char* source_buffer = nullptr;
 
-    return reader.is_open();
-}
+    reader.open(file_path);
 
-void files::FileReader::closeFile()
-{
+    if (!reader.is_open())
+        return source_buffer;
+    
+    size_t file_size = 0UL;
+    reader.seekg(0, reader.end);
+    file_size = reader.tellg();
+    reader.seekg(0, reader.beg);
+
+    source_buffer = new char[file_size + 1UL];
+
+    if (source_buffer != nullptr)
+    {
+        reader.read(source_buffer, file_size);
+        source_buffer[file_size] = '\0';
+    }
+
     reader.close();
-}
 
-[[nodiscard]] bool files::FileReader::loadFileTo(const char* file_path, char* buffer)
-{
-    // Avoid overwrite of an existing buffer!
-    if (buffer != nullptr)
-        return false;
-
-    size_t file_length = reader.tellg();
-    char* temp_buffer = new char[file_length + 1];
-
-    if (!temp_buffer)
-        return false;
-
-    temp_buffer[file_length] = '\0';
-    bool load_status = reader.read(temp_buffer, file_length).fail() == false;
-
-    buffer = temp_buffer;
-
-    return load_status;
+    return source_buffer;
 }
