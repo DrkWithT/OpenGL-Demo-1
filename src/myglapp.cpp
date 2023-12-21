@@ -2,6 +2,7 @@
  * @file myglapp.cpp
  * @author Derek Tan
  * @brief Implements application setup code.
+ * @todo Add FPS based render loop.
  * @version 0.1
  * @date 2023-12-18
  */
@@ -10,13 +11,19 @@
 #include "glad/glad.h"
 #include "glfw/glfw3.h"
 
+#include <cmath>
 #include <iostream>
+
+#include "utils/resources.hpp"
 
 /* Main Constants */
 
-static constexpr const int32_t window_width = 480;
-static constexpr const int32_t window_height = 480;
-static constexpr const char* window_title = "GL Demo 2";
+constexpr const char* basic_vert_shader_path = "./resources/basicvertex.glsl";
+constexpr const char* basic_frag_shader_path = "./resources/basicfragment.glsl";
+
+constexpr const int32_t window_width = 480;
+constexpr const int32_t window_height = 480;
+constexpr const char* window_title = "GL Demo 2";
 
 /* Callbacks */
 
@@ -55,6 +62,7 @@ int main()
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cerr << "Failed to setup GLAD bindings.\n";
+        glfwTerminate();
         return -1;
     }
 
@@ -71,66 +79,20 @@ int main()
         2, 3, 0  // triangle 2
     };
 
-    uint32_t vshader_id;
-    const char* vertex_shader_code = "#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
-        "void main() {\n"
-        "  gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-        "}\0";
-    uint32_t fshader_id;
-    const char* frag_shader_code = "#version 330 core\n"
-        "out vec4 FragColor;\n\n"
-        "void main() {\n"
-        "  FragColor = vec4(0.78425f, 0.6275f, 0.8625f, 1.0f);"
-        "}\0";
-
     // setup buffer
     glGenBuffers(1, &vbo_id);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
     glBufferData(GL_ARRAY_BUFFER, sizeof(shape_data), shape_data, GL_STATIC_DRAW);
 
-    // setup shaders
-    vshader_id = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vshader_id, 1, &vertex_shader_code, NULL);
-    glCompileShader(vshader_id);
+    // setup GPU programs of shader code
+    resources::GLShaderProgram program {basic_vert_shader_path, basic_frag_shader_path};
 
-    int shader_flag;
-    char shader_debug_log[512];
-    glGetShaderiv(vshader_id, GL_COMPILE_STATUS, &shader_flag);
-
-    if (!shader_flag)
+    if (!program.getSetupFlag())
     {
-        glGetShaderInfoLog(vshader_id, 512, NULL, shader_debug_log);
-        std::cerr << "Error [Shader Compile]:\n" << shader_debug_log << '\n';
+        std::cerr << "Error [Shader Check]:\n" << "Check for program setup failed.\n";
+        glfwTerminate();
+        return -1;
     }
-
-    fshader_id = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fshader_id, 1, &frag_shader_code, NULL);
-    glCompileShader(fshader_id);
-    glGetShaderiv(fshader_id, GL_COMPILE_STATUS, &shader_flag);
-
-    if (!shader_flag)
-    {
-        glGetShaderInfoLog(fshader_id, 512, NULL, shader_debug_log);
-        std::cerr << "Error [Shader Compile]:\n" << shader_debug_log << '\n';
-    }
-
-    // Link shaders into GPU program
-    uint32_t shader_program_id = glCreateProgram();
-    glAttachShader(shader_program_id, vshader_id);
-    glAttachShader(shader_program_id, fshader_id);
-    glLinkProgram(shader_program_id);
-    glGetProgramiv(shader_program_id, GL_LINK_STATUS, &shader_flag);
-
-    if (!shader_flag)
-    {
-        glGetProgramInfoLog(shader_program_id, 512, NULL, shader_debug_log);
-        std::cerr << "Error [Shader Compile]:\n" << shader_debug_log << '\n';
-    }
-
-    glUseProgram(shader_program_id);
-    glDeleteShader(vshader_id);
-    glDeleteShader(fshader_id);
 
     // Set formatting of vertex attribute data
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -161,6 +123,10 @@ int main()
     // Begin window use and rendering
     glViewport(0, 0, window_width, window_height);
 
+    // Dynamic uniform state:
+    std::string yDeltaName {"yDelta"};
+    float yDelta = 0.0f;
+
     while (!glfwWindowShouldClose(window))
     {
         // process events
@@ -170,14 +136,20 @@ int main()
         glClearColor(0.9375f, 0.9375f, 0.9375f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // render lilac triangle
-        glUseProgram(shader_program_id);
+        // render bobbing lilac box
+        program.use();
+
+        program.setUniformFloat(yDeltaName, yDelta);
+
         glBindVertexArray(vao_id);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
 
         // show new frame buffer
         glfwSwapBuffers(window);
+
+        // update uniform state
+        yDelta = std::sinf(glfwGetTime()) / 2.0f;
 
         // lookup events
         glfwPollEvents();
